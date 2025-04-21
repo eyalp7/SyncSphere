@@ -1,0 +1,36 @@
+<!-- templates/files_list.html -->
+<!doctype html>
+<html>
+  <head>
+    <title>Your Files</title>
+  </head>
+  <body>
+    <h1>Your Files</h1>
+    {% if files %}
+      <ul>
+        {% for file in files %}
+          <li>
+            {{ file.original_filename }} (Uploaded on: {{ file.upload_date.strftime("%Y-%m-%d %H:%M") }})
+            - <a href="{{ url_for('files.download', file_id=file.id) }}">Download</a>
+            <form action="{{ url_for('files.delete', file_id=file.id) }}" method="post" style="display:inline;">
+              <button type="submit">Delete</button>
+            </form>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>You have no files uploaded.</p>
+    {% endif %}
+    <p><a href="{{ url_for('files.upload') }}">Upload a New File</a></p>
+    <p><a href="{{ url_for('dashboard') }}">Back to Dashboard</a></p>
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <ul>
+          {% for message in messages %}
+            <li>{{ message }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+  </body>
+</html>

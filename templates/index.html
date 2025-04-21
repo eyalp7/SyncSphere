@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SyncSphere - My Files</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <!-- Navbar -->
+  <header class="navbar">
+    <div class="logo">
+      <!-- Use logo_cropped.png if you processed the image -->
+      <img src="{{ url_for('static', filename='images/logo.png') }}" alt="SyncSphere Logo" />
+      <h1>SyncSphere</h1>
+    </div>
+    <nav>
+      <ul>
+        <li><a href="{{ url_for('index') }}">My Files</a></li>
+        <li><a href="{{ url_for('login') }}">Login</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container">
+    <section class="files-section">
+      <h1>Available Files</h1>
+      <div class="file-actions">
+        <button>Download</button>
+        <button>Delete</button>
+      </div>
+    </section>
+    <section class="hero-section">
+      <h2>Effortless File Management</h2>
+      <p>
+        Easily upload and organize your files with SyncSphere. Simplify your workflow with quick actions.
+      </p>
+      <button>Upload File</button>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    &copy; 2025 SyncSphere. All rights reserved.
+  </footer>
+</body>
+</html>

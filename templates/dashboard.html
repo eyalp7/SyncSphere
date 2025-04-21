@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SyncSphere - Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <!-- Link your CSS file -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+</head>
+<body>
+  <!-- Navigation Bar -->
+  <header class="navbar">
+    <div class="navbar-left">
+      <img src="{{ url_for('static', filename='images/logo.png') }}" alt="SyncSphere Logo" class="logo">
+      <span class="app-name">SyncSphere</span>
+    </div>
+    <nav class="navbar-right">
+      <a href="{{ url_for('dashboard') }}">My Files</a>
+      <a href="{{ url_for('friends.send_request') }}">Add Friend</a>
+      <a href="{{ url_for('friends.view_requests') }}">Requests</a>
+      <a href="{{ url_for('friends.list_friends') }}">Friends List</a>
+      <a href="#">Settings</a>
+      <a href="{{ url_for('auth.logout') }}">Logout</a>
+    </nav>
+  </header>
+
+  <!-- Main Content: Available Files Section -->
+  <main>
+    <!-- Files Listing Section -->
+    <section class="files-section">
+      <h2>Available Files</h2>
+      {% if files %}
+        <table class="files-table">
+          <thead>
+            <tr>
+              <th>Filename</th>
+              <th>Upload Date</th>
+              <th>Size (bytes)</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for file in files %}
+            <tr>
+              <td>{{ file.original_filename }}</td>
+              <td>{{ file.upload_date.strftime("%Y-%m-%d %H:%M") }}</td>
+              <td>{{ file.file_size }}</td>
+              <td>
+                <a href="{{ url_for('files.download', file_id=file.id) }}" class="btn btn-download">Download</a>
+                <form action="{{ url_for('files.delete', file_id=file.id) }}" method="post" style="display:inline;">
+                  <button type="submit" class="btn btn-delete" onclick="return confirm('Are you sure?')">Delete</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="no-files">You have no uploaded files yet.</p>
+      {% endif %}
+    </section>
+
+    <!-- CTA / Upload Section -->
+    <section class="upload-cta">
+      <h2>Effortless File Management</h2>
+      <p>Easily upload and organize your files with SyncSphere. Simplify your workflow with quick actions.</p>
+      <form action="{{ url_for('files.upload') }}" method="post" enctype="multipart/form-data" class="upload-form">
+        <input type="file" name="file" class="upload-input" required>
+        <button type="submit" class="btn btn-upload">Upload File</button>
+      </form>
+    </section>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=True) %}
+      {% if messages %}
+        <div class="flash-messages">
+          <ul>
+            {% for category, message in messages %}
+              <li class="{{ category }}">{{ message }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+    {% endwith %}
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>&copy; {{ current_year if current_year else 2025 }} SyncSphere. All rights reserved.</p>
+  </footer>
+</body>
+</html>

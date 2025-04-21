@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SyncSphere - Pending Requests</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+</head>
+<body>
+  <header class="navbar">
+    <div class="navbar-left">
+      <img src="{{ url_for('static', filename='images/logo.png') }}" alt="SyncSphere Logo" class="logo">
+      <span class="app-name">SyncSphere</span>
+    </div>
+    <nav class="navbar-right">
+      <a href="{{ url_for('dashboard') }}">Dashboard</a>
+      <a href="{{ url_for('friends.send_request') }}">Add Friend</a>
+      <a href="{{ url_for('auth.logout') }}">Logout</a>
+    </nav>
+  </header>
+
+  <main class="main-content">
+    <section class="list-section">
+      <h2>Pending Friend Requests</h2>
+      {% if requests %}
+        <ul class="list-group">
+          {% for req in requests %}
+            <li class="list-item">
+              <span>User ID: {{ req.from_user_id }}</span>
+              <form method="post" action="{{ url_for('friends.respond_request', rq_id=req.id) }}" class="inline-form">
+                <button name="action" value="accept" class="btn btn-download">Accept</button>
+                <button name="action" value="reject" class="btn btn-delete">Reject</button>
+              </form>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p>No pending requests.</p>
+      {% endif %}
+      {% with messages = get_flashed_messages(with_categories=True) %}
+        {% if messages %}
+          <div class="flash-messages">
+            <ul>
+              {% for category, message in messages %}
+                <li class="{{ category }}">{{ message }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+        {% endif %}
+      {% endwith %}
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>&copy; {{ current_year or 2025 }} SyncSphere.</p>
+  </footer>
+</body>
+</html>

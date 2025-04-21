@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SyncSphere - Login</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <div class="login-container">
+    <div class="logo">
+      <img src="{{ url_for('static', filename='images/logo.png') }}" alt="SyncSphere Logo">
+      <h1>SyncSphere</h1>
+    </div>
+    <h2>Access your files securely</h2>
+    <form action="{{ url_for('auth.login') }}" method="post">
+      <input type="text" name="username_or_email" placeholder="Your email address" required>
+      <input type="password" name="password" placeholder="Enter your password" required>
+      <!-- Remember Me Checkbox -->
+      <label>
+        <input type="checkbox" name="remember_me" value="on"> Remember Me
+      </label>
+      <button type="submit">Log in</button>
+    </form>
+    <p class="sign-up-text">
+      Need an account? <a href="{{ url_for('auth.register') }}">Sign Up</a>
+    </p>
+    <!-- Flash Messages Block -->
+    {% with messages = get_flashed_messages(with_categories=True) %}
+      {% if messages %}
+        <div class="flash-messages">
+          <ul>
+            {% for category, message in messages %}
+              <li class="{{ category }}">{{ message }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+    {% endwith %}
+  </div>
+</body>
+</html>

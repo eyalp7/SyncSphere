@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SyncSphere - Add Friend</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+</head>
+<body>
+  <header class="navbar">
+    <div class="navbar-left">
+      <img src="{{ url_for('static', filename='images/logo.png') }}" alt="SyncSphere Logo" class="logo">
+      <span class="app-name">SyncSphere</span>
+    </div>
+    <nav class="navbar-right">
+      <a href="{{ url_for('dashboard') }}">Dashboard</a>
+      <a href="{{ url_for('friends.list_friends') }}">Friends</a>
+      <a href="{{ url_for('auth.logout') }}">Logout</a>
+    </nav>
+  </header>
+
+  <main class="main-content">
+    <section class="action-section">
+      <h2>Add a New Friend</h2>
+      <form method="post" class="action-form">
+        <input type="text" name="to_username" placeholder="Friend's username" required>
+        <button type="submit" class="btn btn-upload">Send Request</button>
+      </form>
+      {% with messages = get_flashed_messages(with_categories=True) %}
+        {% if messages %}
+          <div class="flash-messages">
+            <ul>
+              {% for category, message in messages %}
+                <li class="{{ category }}">{{ message }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+        {% endif %}
+      {% endwith %}
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>&copy; {{ current_year or 2025 }} SyncSphere.</p>
+  </footer>
+</body>
+</html>

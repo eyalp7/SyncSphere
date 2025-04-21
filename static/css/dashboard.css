@@ -1,0 +1,207 @@
+/* dashboard.css */
+
+/* General Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  body {
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f6f8fa;
+    color: #333;
+  }
+  
+  /* Navbar */
+  .navbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #fff;
+    padding: 1rem 2rem;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  .navbar-left {
+    display: flex;
+    align-items: center;
+  }
+  
+  .logo {
+    height: 40px;
+    margin-right: 0.5rem;
+  }
+  
+  .app-name {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #222;
+  }
+  
+  .navbar-right a {
+    margin-left: 1.5rem;
+    text-decoration: none;
+    color: #555;
+    font-weight: 500;
+  }
+  
+  .navbar-right a:hover {
+    color: #000;
+  }
+  
+  /* Main Content */
+  main {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 2rem;
+  }
+  
+  /* Files Section */
+  .files-section {
+    background-color: #fff;
+    padding: 2rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .files-section h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .files-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+  }
+  
+  .files-table thead {
+    background-color: #f0f0f0;
+  }
+  
+  .files-table th,
+  .files-table td {
+    padding: 0.75rem;
+    text-align: left;
+    border: 1px solid #ddd;
+  }
+  
+  .no-files {
+    margin-top: 1rem;
+  }
+  
+  /* Action Buttons */
+  .btn {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    margin-right: 0.5rem;
+    text-decoration: none;
+    font-size: 0.875rem;
+    border-radius: 4px;
+    cursor: pointer;
+    border: none;
+  }
+  
+  .btn-download {
+    background-color: #007BFF;
+    color: #fff;
+  }
+  
+  .btn-download:hover {
+    background-color: #0056b3;
+  }
+  
+  .btn-delete {
+    background-color: #dc3545;
+    color: #fff;
+  }
+  
+  .btn-delete:hover {
+    background-color: #c82333;
+  }
+  
+  /* CTA - Upload Section */
+  .upload-cta {
+    text-align: center;
+    background-color: #fff;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .upload-cta h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .upload-cta p {
+    color: #666;
+    margin-bottom: 1.5rem;
+  }
+  
+  .upload-form {
+    display: inline-block;
+    text-align: left;
+  }
+  
+  .upload-input {
+    margin-bottom: 1rem;
+  }
+  
+  .btn-upload {
+    background-color: #28a745;
+    color: #fff;
+  }
+  
+  .btn-upload:hover {
+    background-color: #218838;
+  }
+  
+  /* Flash Messages */
+  .flash-messages {
+    max-width: 1200px;
+    margin: 1rem auto;
+    padding: 1rem 2rem;
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+    border-radius: 8px;
+    color: #155724;
+  }
+  
+  .flash-messages ul {
+    list-style: none;
+  }
+  
+  /* Footer */
+  .footer {
+    text-align: center;
+    padding: 1rem 0;
+    color: #888;
+    font-size: 0.875rem;
+  }
+
+  /* Additional flash message styles */
+.flash-messages ul {
+    list-style: none;
+    padding: 0;
+  }
+  .flash-messages li.success {
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+    padding: 0.75rem;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+  }
+  .flash-messages li.error {
+    background-color: #ffe7e7;
+    border: 1px solid #ffa3a3;
+    color: #d8000c;
+    padding: 0.75rem;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+  }
+  
+  
