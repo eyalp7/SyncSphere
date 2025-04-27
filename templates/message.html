@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Chat with {{ recipient_username }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+</head>
+<body>
+  <header class="navbar">…</header>
+  <main class="main-content">
+    <section class="message-section">
+      <h2>Chat with {{ recipient_username }}</h2>
+      <form method="post" class="message-form">
+        <textarea name="message" rows="4" placeholder="Type your message…" required></textarea>
+        <button type="submit" class="btn btn-upload">Send</button>
+      </form>
+    </section>
+  </main>
+</body>
+</html>

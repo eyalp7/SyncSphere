@@ -2,6 +2,8 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from werkzeug.security import generate_password_hash, check_password_hash
 from models import db, User
+from changes_queue import changes_queue
+from datetime import datetime
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -24,6 +26,14 @@ def register():
         new_user.set_password(password)
         db.session.add(new_user)
         db.session.commit()
+
+        changes_queue.put({
+            "type":      "user_create",
+            "user_id":   new_user.id,
+            "username":  new_user.username,
+            "email":     new_user.email,
+            "timestamp": datetime.now().isoformat()
+        })
 
         flash('Registration successful! Please log in.', 'success')
         return redirect(url_for('auth.login'))

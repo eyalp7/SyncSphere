@@ -18,10 +18,8 @@
     </div>
     <nav class="navbar-right">
       <a href="{{ url_for('dashboard') }}">My Files</a>
-      <a href="{{ url_for('friends.send_request') }}">Add Friend</a>
       <a href="{{ url_for('friends.view_requests') }}">Requests</a>
       <a href="{{ url_for('friends.list_friends') }}">Friends List</a>
-      <a href="#">Settings</a>
       <a href="{{ url_for('auth.logout') }}">Logout</a>
     </nav>
   </header>
@@ -51,6 +49,15 @@
                 <a href="{{ url_for('files.download', file_id=file.id) }}" class="btn btn-download">Download</a>
                 <form action="{{ url_for('files.delete', file_id=file.id) }}" method="post" style="display:inline;">
                   <button type="submit" class="btn btn-delete" onclick="return confirm('Are you sure?')">Delete</button>
+                </form>
+                <!-- Inline Change Permissions -->
+                <form action="{{ url_for('files.change_permissions', file_id=file.id) }}" method="post" style="display:inline; margin-left: 0.5rem;">
+                  <select name="permissions" class="permission-select">
+                    <option value="private" {% if file.permissions=='private' %}selected{% endif %}>Private</option>
+                    <option value="shared" {% if file.permissions=='shared' %}selected{% endif %}>Friends Only</option>
+                    <option value="public" {% if file.permissions=='public' %}selected{% endif %}>Public</option>
+                  </select>
+                  <button type="submit" class="btn btn-upload">Update</button>
                 </form>
               </td>
             </tr>
@@ -85,10 +92,5 @@
       {% endif %}
     {% endwith %}
   </main>
-
-  <!-- Footer -->
-  <footer class="footer">
-    <p>&copy; {{ current_year if current_year else 2025 }} SyncSphere. All rights reserved.</p>
-  </footer>
 </body>
 </html>

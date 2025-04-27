@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <title>SyncSphere - Your Friends</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
 </head>
 <body>
@@ -15,7 +14,7 @@
     </div>
     <nav class="navbar-right">
       <a href="{{ url_for('dashboard') }}">Dashboard</a>
-      <a href="{{ url_for('friends.send_request') }}">Add Friend</a>
+      <a href="{{ url_for('friends.view_requests') }}">Requests</a>
       <a href="{{ url_for('auth.logout') }}">Logout</a>
     </nav>
   </header>
@@ -23,15 +22,35 @@
   <main class="main-content">
     <section class="list-section">
       <h2>Your Friends</h2>
+
       {% if friends %}
-        <ul class="list-group">
+        <div class="friends-grid">
           {% for friend in friends %}
-            <li class="list-item">{{ friend.username }}</li>
+            <div class="friend-card">
+              <div class="friend-info">
+                <h3 class="friend-name">{{ friend.display_name or friend.username }}</h3>
+                <p class="friend-username">@{{ friend.username }}</p>
+                <p class="friend-details">
+                  Joined: {{ friend.created_at.strftime('%b %d, %Y') }}
+                </p>
+              </div>
+              <div class="friend-actions">
+                <a href="{{ url_for('friends.view_friend_files', username=friend.username) }}"
+                   class="btn btn-download">View Files</a>
+                <a href="{{ url_for('friends.message', username=friend.username) }}"
+                   class="btn btn-message">Message</a>
+                <form action="{{ url_for('friends.remove', username=friend.username) }}"
+                      method="post" style="display:inline;">
+                  <button type="submit" class="btn btn-remove">Remove</button>
+                </form>
+              </div>
+            </div>
           {% endfor %}
-        </ul>
+        </div>
       {% else %}
-        <p>You have no friends yet.</p>
+        <p class="no-friends">You have no friends yet.</p>
       {% endif %}
+
       {% with messages = get_flashed_messages(with_categories=True) %}
         {% if messages %}
           <div class="flash-messages">
@@ -45,9 +64,5 @@
       {% endwith %}
     </section>
   </main>
-
-  <footer class="footer">
-    <p>&copy; {{ current_year or 2025 }} SyncSphere.</p>
-  </footer>
 </body>
 </html>

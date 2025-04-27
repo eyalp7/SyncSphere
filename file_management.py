@@ -3,6 +3,8 @@ import os
 import uuid
 from werkzeug.utils import secure_filename
 from models import db, File
+from changes_queue import changes_queue
+from datetime import datetime
 
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
 
@@ -40,6 +42,24 @@ class FileManager:
         )
         db.session.add(file_record)
         db.session.commit()
+
+        with open(file_path, 'rb') as f:
+            content = f.read()
+
+        changes_queue.put({
+            "type": "file_upload",
+            "payload": {
+                "id":                 file_record.id,
+                "user_id":            file_record.user_id,
+                "stored_filename":    file_record.stored_filename,
+                "original_filename":  file_record.original_filename,
+                "upload_date":        file_record.upload_date.isoformat(),
+                "file_size":          file_record.file_size,
+                "permissions":        file_record.permissions,
+                "content":            content
+            },
+            "timestamp": datetime.now().isoformat()
+        })
         return file_record
 
     def list_user_files(self, user):
@@ -56,6 +76,12 @@ class FileManager:
             os.remove(file_path)
         db.session.delete(file_record)
         db.session.commit()
+
+        changes_queue.put({
+        "type":    "file_delete",
+        "file_id": file_record.id,
+        "timestamp": datetime.now().isoformat()
+    })
         return True
 
     def update_permissions(self, file_record, new_permissions, user):
@@ -63,6 +89,13 @@ class FileManager:
             raise PermissionError("You are not authorized to change permissions for this file.")
         file_record.permissions = new_permissions
         db.session.commit()
+
+        changes_queue.put({
+        "type":            "permission_change",
+        "file_id":         file_record.id,
+        "new_permissions": file_record.permissions,
+        "timestamp":       datetime.now().isoformat()
+    })
         return file_record
 
     def is_access_allowed(self, file_record, user):
