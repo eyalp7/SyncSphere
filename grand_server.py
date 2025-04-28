@@ -3,7 +3,7 @@ import threading
 import json
 import time
 
-from config import GRAND_HOST, GRAND_PORT
+from config import GRAND_HOST, GRAND_PORT, BIND_HOST
 
 # Interval (in seconds) at which to request changes from regionals
 SYNC_INTERVAL = 60  # 1 minute
