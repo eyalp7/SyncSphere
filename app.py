@@ -57,4 +57,4 @@ if not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
     threading.Thread(target=connect_to_server, daemon=True).start()
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True, use_reloader=False)
+    app.run(host='0.0.0.0', debug=True, use_reloader=False, ssl_context=('server.crt', 'server.key'))
