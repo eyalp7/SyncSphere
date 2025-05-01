@@ -11,6 +11,10 @@ from friend_management_routes import friends_bp
 # import the sync client
 from sync import connect_to_server
 
+here = os.path.dirname(__file__)
+cert = os.path.join(here, 'server.crt')
+key  = os.path.join(here, 'server.key')
+
 app = Flask(__name__)
 basedir = os.path.abspath(os.path.dirname(__file__))
 db_file = os.path.join(basedir, 'instance', 'database.db')
@@ -57,4 +61,4 @@ if not app.debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
     threading.Thread(target=connect_to_server, daemon=True).start()
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True, use_reloader=False)
+    app.run(host='0.0.0.0', debug=True, use_reloader=False, ssl_context=(cert, key))

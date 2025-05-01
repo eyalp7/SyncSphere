@@ -37,11 +37,9 @@
               <div class="friend-actions">
                 <a href="{{ url_for('friends.view_friend_files', username=friend.username) }}"
                    class="btn btn-download">View Files</a>
-                <a href="{{ url_for('friends.message', username=friend.username) }}"
-                   class="btn btn-message">Message</a>
                 <form action="{{ url_for('friends.remove', username=friend.username) }}"
-                      method="post" style="display:inline;">
-                  <button type="submit" class="btn btn-remove">Remove</button>
+                      method="post" style="display:inline; margin-left: 0.5rem;">
+                  <button type="submit" class="btn btn-remove" onclick="return confirm('Remove friend?')">Remove</button>
                 </form>
               </div>
             </div>

@@ -5,20 +5,19 @@ import socket
 import json
 import base64
 import time
+import ssl
 from datetime import datetime
 from queue import Empty
 
 from config import GRAND_HOST, GRAND_PORT
 from changes_queue import changes_queue
 
-# Local upload folder (adjust if needed)
+# Adjust this path if your uploads folder is elsewhere
 UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads')
 
 
 def send_changes(sock):
-    """
-    Drain local queue, encode any raw file bytes, and send to Grand Server.
-    """
+    """Drain local queue, base64‐encode file bytes if needed, and send to Grand Server."""
     events = []
     while True:
         try:
@@ -43,14 +42,10 @@ def send_changes(sock):
 
 def receive_changes(message):
     """
-    Apply incoming events from Grand Server inside a Flask app context.
+    Apply events from Grand Server inside a fresh Flask app context.
     """
-    # import the Flask app instance
     from app import app
-
-    # push a context so db.session, FileManager, etc. work
     with app.app_context():
-        # now safe to import your application modules
         from file_management    import FileManager
         from friend_management  import FriendManager
         from models             import db, User, File
@@ -63,12 +58,14 @@ def receive_changes(message):
             try:
                 if et == 'file_upload':
                     payload = ev['payload']
+                    # 1) write file bytes to disk
                     data = base64.b64decode(payload['content'])
                     dest = os.path.join(UPLOAD_FOLDER, payload['stored_filename'])
                     os.makedirs(os.path.dirname(dest), exist_ok=True)
                     with open(dest, 'wb') as f:
                         f.write(data)
 
+                    # 2) merge into DB (insert or update)
                     rec = File(
                         id=payload['id'],
                         user_id=payload['user_id'],
@@ -78,28 +75,33 @@ def receive_changes(message):
                         permissions=payload['permissions'],
                         upload_date=datetime.fromisoformat(payload['upload_date'])
                     )
-                    db.session.add(rec)
+                    db.session.merge(rec)
                     db.session.commit()
 
                 elif et == 'file_delete':
                     rec = fm.get_file_record(ev['file_id'])
-                    if rec is None:
-                        print(f"[Sync] Warn: file_delete skipped, no record for ID {ev['file_id']}", flush=True)
+                    if not rec:
+                        print(f"[Sync] Warn: no file record for deletion ID {ev['file_id']}", flush=True)
                         continue
                     user = User.query.get(rec.user_id)
                     fm.delete_file(rec, user)
 
                 elif et == 'permission_change':
                     rec = fm.get_file_record(ev['file_id'])
-                    if rec is None:
-                        print(f"[Sync] Warn: permission_change skipped, no record for ID {ev['file_id']}", flush=True)
+                    if not rec:
+                        print(f"[Sync] Warn: no file for permission change ID {ev['file_id']}", flush=True)
                         continue
                     user = User.query.get(rec.user_id)
                     fm.update_permissions(rec, ev['new_permissions'], user)
 
                 elif et == 'user_create':
-                    u = User(id=ev['user_id'], username=ev['username'], email=ev['email'])
-                    db.session.add(u)
+                    u = User(
+                        id=ev['user_id'],
+                        username=ev['username'],
+                        email=ev['email'],
+                        password_hash=ev.get('password_hash')
+                    )
+                    db.session.merge(u)
                     db.session.commit()
 
                 elif et == 'friend_request':
@@ -124,16 +126,16 @@ def receive_changes(message):
                     print(f"[Sync] Unknown event type: {et}", flush=True)
 
             except Exception as e:
+                db.session.rollback()
                 print(f"[Sync] Error applying '{et}' event: {e}", flush=True)
-                # continue to next event without killing the loop
 
 
 def sync_changes(sock):
     """
-    Read newline-delimited JSON commands from Grand Server and dispatch.
+    Read newline-delimited JSON commands from Grand Server and dispatch handlers.
     """
-    f = sock.makefile('r')
-    for line in f:
+    buffer = sock.makefile('r')
+    for line in buffer:
         try:
             msg = json.loads(line)
         except json.JSONDecodeError:
@@ -155,7 +157,14 @@ def connect_to_server():
     """
     Establish TCP connection and enter the sync loop.
     """
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+    context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    context.check_hostname = False
+    context.verify_mode = ssl.CERT_NONE
+
+    raw_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock = context.wrap_socket(raw_sock, server_hostname=GRAND_HOST)
+
     sock.connect((GRAND_HOST, GRAND_PORT))
     print("[Sync] Connected to grand server", flush=True)
     sync_changes(sock)

@@ -12,6 +12,7 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.now)
 
     def set_password(self, password):
+        print(generate_password_hash(password))
         self.password_hash = generate_password_hash(password)
     
     def check_password(self, password):
