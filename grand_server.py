@@ -5,26 +5,22 @@ import threading
 import json
 import time
 import ssl
-import os
 
-from config import BIND_HOST, GRAND_PORT
+from config import BIND_HOST, GRAND_PORT, certfile, keyfile
 
 # How often (in seconds) to prompt regionals for changes
-SYNC_INTERVAL = 60
+SYNC_INTERVAL = 60 #Every 5 minutes
 
-# History buffer: store last N event batches for reconnects
-HISTORY_SIZE = 60
+# History buffer: store last 5 event batches for reconnects
+HISTORY_SIZE = 5
 history = []
 
 # Global list of connected regional sockets
 clients = []
-clients_lock = threading.Lock()
-here = os.path.dirname(__file__)
-certfile = os.path.join(here, 'server.crt')
-keyfile = os.path.join(here, 'server.key')
+clients_lock = threading.Lock() #Makes sure that only 1 thread at a time can access the clients.
 
 def send_history(conn):
-    """Replay the last HISTORY_SIZE event-lists to this connection."""
+    """Sends the last 5 events to a regional_server."""
     for events in history:
         packet = json.dumps({'type': 'receive', 'events': events}) + '\n'
         try:
@@ -39,8 +35,9 @@ def accept_loop(server_sock, context):
             raw_conn, addr = server_sock.accept()
             # Perform TLS handshake on the new connection
             try:
-                conn = context.wrap_socket(raw_conn, server_side=True)
+                conn = context.wrap_socket(raw_conn, server_side=True) #Wraps the socket with TLS.
                 print(f"[GrandServer] Regional connected (TLS): {addr}", flush=True)
+
             except ssl.SSLError as e:
                 print(f"[GrandServer] SSL handshake failed with {addr}: {e}", flush=True)
                 raw_conn.close()
@@ -50,7 +47,7 @@ def accept_loop(server_sock, context):
                 clients.append(conn)
             # Replay missed events for reconnects
             send_history(conn)
-            threading.Thread(target=client_handler, args=(conn,), daemon=True).start()
+            threading.Thread(target=client_handler, args=(conn,), daemon=True).start() #starts a thread new thread for the accepted regional.
 
         except Exception as e:
             print(f"[GrandServer] accept_loop error: {e}", flush=True)
@@ -59,11 +56,12 @@ def accept_loop(server_sock, context):
 
 def client_handler(conn):
     """Read incoming 'changes' messages and rebroadcast them."""
-    addr = conn.getpeername()
-    f = conn.makefile('r')
+    addr = conn.getpeername() #Gets the regional's address.
+    f = conn.makefile('r') #Wraps the socket into a file-like object(this makes receiving large chunks much easier).
     try:
         for line in f:
-            line = line.strip()
+            #Continiously reads each incoming line.
+            line = line.strip() #Ignoring empty lines.
             if not line:
                 continue
 
@@ -73,11 +71,12 @@ def client_handler(conn):
                 print(f"[GrandServer] Invalid JSON from {addr}: {e}", flush=True)
                 continue
 
-            mtype = msg.get('type')
+            mtype = msg.get('type') #Getting the message type
             if mtype == 'changes':
-                events = msg.get('events', [])
+                events = msg.get('events', []) #Returns an empty list incase events is missing.
                 print(f"[GrandServer] Received {len(events)} events from {addr}", flush=True)
-                broadcast(events, exclude=conn)
+                broadcast(events, 
+                exclude=conn) #Sends the changes to the rest of the regionals.
             else:
                 print(f"[GrandServer] Unknown message type from {addr}: {mtype}", flush=True)
 
@@ -98,7 +97,7 @@ def sync_loop():
     """Every SYNC_INTERVAL seconds, send 'send' to all live regionals."""
     while True:
         try:
-            time.sleep(SYNC_INTERVAL)
+            time.sleep(SYNC_INTERVAL) #Sleeps until the next sync process.
             print("[GrandServer] Requesting changes from all regionals...", flush=True)
             packet = json.dumps({'type': 'send'}) + '\n'
             data = packet.encode('utf-8')
@@ -152,7 +151,7 @@ def broadcast(events, exclude=None):
                 clients.remove(conn)
                 try:
                     conn.close()
-                except:
+                except: #In case that the socket is already closed.
                     pass
 
 

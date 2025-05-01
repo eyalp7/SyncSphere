@@ -1,43 +1,43 @@
-# auth.py
-
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy import or_
 from models import db, User
-from changes_queue import changes_queue
+from config import changes_queue
 from datetime import datetime, timedelta
 
+# Create a Blueprint for all auth-related routes (register, login, logout)
 auth_bp = Blueprint('auth', __name__)
 
-# configurable lockout parameters
+# Lockout policy: max failed attempts before temporary block
 MAX_LOGIN_ATTEMPTS = 5
 LOCKOUT_TIME_MINUTES = 15
 
 def _is_locked_out():
-    """Returns True if the session is currently locked out."""
+    """ Check if the current session is under lockout. Returns True if lockout hasn’t expired; otherwise clears lockout state."""
     lockout_until = session.get('lockout_until')
-    if lockout_until:
-        # compare stored ISO timestamp to now
-        if datetime.fromisoformat(lockout_until) > datetime.utcnow():
-            return True
-        # lockout expired
-        session.pop('lockout_until', None)
-        session.pop('login_attempts', None)
+    if lockout_until and datetime.fromisoformat(lockout_until) > datetime.utcnow():
+        return True
+    # Lockout expired or not set → remove any stale counters
+    session.pop('lockout_until', None)
+    session.pop('login_attempts', None)
     return False
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
+    """ Handle user registration."""
     if request.method == 'POST':
-        username = request.form.get('username', '').strip()
-        email = request.form.get('email', '').strip()
-        password = request.form.get('password', '')
+        session.clear()  # Prevent session fixation attacks
 
-        # basic non-empty validation
+        username = request.form['username'].strip()
+        email    = request.form['email'].strip()
+        password = request.form['password']
+
+        # Basic input validation
         if not username or not email or not password:
             flash('Please fill in all fields!', 'error')
             return redirect(url_for('auth.register'))
 
-        # using SQLAlchemy ORM with parameter binding to avoid SQL injection
+        # Check for existing user by username OR email (safe ORM filter, avoids SQLi)
         existing = User.query.filter(
             or_(User.username == username, User.email == email)
         ).first()
@@ -45,13 +45,13 @@ def register():
             flash('Username or Email already exists!', 'error')
             return redirect(url_for('auth.register'))
 
-        # create and hash password
+        # Create and hash the new user's password
         new_user = User(username=username, email=email)
         new_user.set_password(password)
         db.session.add(new_user)
         db.session.commit()
 
-        # enqueue sync event (without exposing raw password)
+        # Notify other regional servers of the new user
         changes_queue.put({
             "type":      "user_create",
             "user_id":   new_user.id,
@@ -63,44 +63,47 @@ def register():
         flash('Registration successful! Please log in.', 'success')
         return redirect(url_for('auth.login'))
 
+    # GET request → render form template
     return render_template('register.html')
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
-    # check if user is currently locked out
+    """ Handle user login. """
     if _is_locked_out():
-        flash(f'Too many failed attempts. Try again later.', 'error')
+        flash('Too many failed attempts. Try again later.', 'error')
+        # Render the login template without redirect to preserve lockout message
         return render_template('login.html')
 
     if request.method == 'POST':
-        identifier = request.form.get('username_or_email', '').strip()
-        password = request.form.get('password', '')
-        remember_me = request.form.get('remember_me')
+        session.clear()  # Prevent session fixation on every login attempt
 
-        # lookup via SQLAlchemy ORM (safe against injection)
+        identifier = request.form['username_or_email'].strip()
+        password   = request.form['password']
+        remember   = 'remember_me' in request.form  # Checkbox presence
+
+        # Lookup by username OR email using safe ORM parameter binding
         user = User.query.filter(
             or_(User.username == identifier, User.email == identifier)
         ).first()
 
+        # Verify password using Werkzeug’s constant-time check
         if user and user.check_password(password):
-            # successful login → reset attempts & lockout
+            # Reset failed-attempt counters on success
             session.pop('login_attempts', None)
             session.pop('lockout_until', None)
-
-            # set session permanence
-            session.permanent = (remember_me == 'on')
-
-            session['user_id'] = user.id
-            session['username'] = user.username
+            # Store minimal user info in session
+            session['user_id']   = user.id
+            session['username']  = user.username
+            session.permanent    = remember  # honor “Remember Me”
             return redirect(url_for('dashboard'))
 
-        # failed login: increment attempts
+        # Failed login: increment counter
         attempts = session.get('login_attempts', 0) + 1
         session['login_attempts'] = attempts
 
+        # If too many fails, impose lockout window
         if attempts >= MAX_LOGIN_ATTEMPTS:
-            # impose lockout window
             until = datetime.utcnow() + timedelta(minutes=LOCKOUT_TIME_MINUTES)
             session['lockout_until'] = until.isoformat()
             flash(f'Too many failed attempts. Try again in {LOCKOUT_TIME_MINUTES} minutes.', 'error')
@@ -109,11 +112,13 @@ def login():
 
         return redirect(url_for('auth.login'))
 
+    # GET request → render the login form
     return render_template('login.html')
 
 
 @auth_bp.route('/logout')
 def logout():
+    """ Log the user out by clearing the session and redirecting to login."""
     session.clear()
     flash('Logged out successfully!', 'success')
     return redirect(url_for('auth.login'))

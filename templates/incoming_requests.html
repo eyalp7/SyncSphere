@@ -23,39 +23,38 @@
     <section class="list-section">
       <h2>Friend Requests</h2>
 
-      <!-- Send Request Form -->
       <form method="post" action="{{ url_for('friends.view_requests') }}" class="action-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="text" name="to_username" placeholder="Add a friend" required>
         <button type="submit" class="btn btn-upload">Send Request</button>
       </form>
 
-      <!-- Outgoing Requests -->
       {% if outgoing %}
         <h3>Your Pending Requests</h3>
         <div class="friends-grid">
           {% for u in outgoing %}
             <div class="friend-card">
               <div class="friend-info">
-                <h3 class="friend-name">{{ u.display_name or u.username }}</h3>
-                <p class="friend-username">@{{ u.username }}</p>
+                <h3>{{ u.display_name or u.username }}</h3>
+                <p>@{{ u.username }}</p>
               </div>
             </div>
           {% endfor %}
         </div>
       {% endif %}
 
-      <!-- Incoming Requests -->
       {% if incoming %}
         <h3>Incoming Requests</h3>
         <div class="friends-grid">
           {% for item in incoming %}
             <div class="friend-card">
               <div class="friend-info">
-                <h3 class="friend-name">{{ item.sender.display_name or item.sender.username }}</h3>
-                <p class="friend-username">@{{ item.sender.username }}</p>
+                <h3>{{ item.sender.display_name or item.sender.username }}</h3>
+                <p>@{{ item.sender.username }}</p>
               </div>
               <div class="friend-actions">
                 <form method="post" action="{{ url_for('friends.respond_request', rq_id=item.req.id) }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <button name="action" value="accept" class="btn btn-download">Accept</button>
                   <button name="action" value="reject" class="btn btn-delete">Reject</button>
                 </form>

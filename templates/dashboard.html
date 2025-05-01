@@ -4,29 +4,29 @@
   <meta charset="UTF-8">
   <title>SyncSphere - Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Google Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <!-- Link your CSS file -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
 </head>
 <body>
-  <!-- Navigation Bar -->
   <header class="navbar">
     <div class="navbar-left">
       <img src="{{ url_for('static', filename='images/logo.png') }}" alt="SyncSphere Logo" class="logo">
       <span class="app-name">SyncSphere</span>
     </div>
     <nav class="navbar-right">
-      <a href="{{ url_for('dashboard') }}">dashboard</a>
+      <a href="{{ url_for('dashboard') }}">Dashboard</a>
       <a href="{{ url_for('friends.view_requests') }}">Requests</a>
       <a href="{{ url_for('friends.list_friends') }}">Friends List</a>
       <a href="{{ url_for('auth.logout') }}">Logout</a>
     </nav>
   </header>
 
-  <!-- Main Content: Available Files Section -->
+  <section class="storage-usage">
+    {% set used_gb = (current_user.used_storage / (1024*1024*1024)) %}
+    {% set quota_gb = (current_user.storage_quota / (1024*1024*1024)) %}
+    <p>Storage used: <strong>{{ used_gb|round(2) }} GB</strong> of <strong>{{ quota_gb|round(2) }} GB</strong></p>
+  </section>
+
   <main>
-    <!-- Files Listing Section -->
     <section class="files-section">
       <h2>Available Files</h2>
       {% if files %}
@@ -41,26 +41,26 @@
           </thead>
           <tbody>
             {% for file in files %}
-            <tr>
-              <td>{{ file.original_filename }}</td>
-              <td>{{ file.upload_date.strftime("%Y-%m-%d %H:%M") }}</td>
-              <td>{{ file.file_size }}</td>
-              <td>
-                <a href="{{ url_for('files.download', file_id=file.id) }}" class="btn btn-download">Download</a>
-                <form action="{{ url_for('files.delete', file_id=file.id) }}" method="post" style="display:inline;">
-                  <button type="submit" class="btn btn-delete" onclick="return confirm('Are you sure?')">Delete</button>
-                </form>
-                <!-- Inline Change Permissions -->
-                <form action="{{ url_for('files.change_permissions', file_id=file.id) }}" method="post" style="display:inline; margin-left: 0.5rem;">
-                  <select name="permissions" class="permission-select">
-                    <option value="private" {% if file.permissions=='private' %}selected{% endif %}>Private</option>
-                    <option value="shared" {% if file.permissions=='shared' %}selected{% endif %}>Friends Only</option>
-                    <option value="public" {% if file.permissions=='public' %}selected{% endif %}>Public</option>
-                  </select>
-                  <button type="submit" class="btn btn-upload">Update</button>
-                </form>
-              </td>
-            </tr>
+              <tr>
+                <td>{{ file.original_filename }}</td>
+                <td>{{ file.upload_date.strftime("%Y-%m-%d %H:%M") }}</td>
+                <td>{{ file.file_size }}</td>
+                <td>
+                  <a href="{{ url_for('files.download', file_id=file.id) }}" class="btn btn-download">Download</a>
+                  <form action="{{ url_for('files.delete', file_id=file.id) }}" method="post" style="display:inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-delete" onclick="return confirm('Are you sure?')">Delete</button>
+                  </form>
+                  <form action="{{ url_for('files.change_permissions', file_id=file.id) }}" method="post" style="display:inline; margin-left:0.5rem;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <select name="permissions" class="permission-select">
+                      <option value="private" {% if file.permissions=='private' %}selected{% endif %}>Private</option>
+                      <option value="public" {% if file.permissions=='public' %}selected{% endif %}>Public</option>
+                    </select>
+                    <button type="submit" class="btn btn-upload">Update</button>
+                  </form>
+                </td>
+              </tr>
             {% endfor %}
           </tbody>
         </table>
@@ -69,17 +69,16 @@
       {% endif %}
     </section>
 
-    <!-- CTA / Upload Section -->
     <section class="upload-cta">
       <h2>Effortless File Management</h2>
-      <p>Easily upload and organize your files with SyncSphere. Simplify your workflow with quick actions.</p>
+      <p>Easily upload and organize your files with SyncSphere.</p>
       <form action="{{ url_for('files.upload') }}" method="post" enctype="multipart/form-data" class="upload-form">
-        <input type="file" name="file" class="upload-input" required>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="file" name="file" required>
         <button type="submit" class="btn btn-upload">Upload File</button>
       </form>
     </section>
 
-    <!-- Flash Messages -->
     {% with messages = get_flashed_messages(with_categories=True) %}
       {% if messages %}
         <div class="flash-messages">

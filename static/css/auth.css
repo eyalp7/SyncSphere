@@ -1,0 +1,242 @@
+:root {
+  --primary-color: #4f80e1;
+  --text-color: #333;
+  --bg-color: #fff;
+  --font-family: 'Poppins', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-family);
+  background-color: var(--bg-color);
+  color: var(--text-color);
+}
+
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+  padding: 0 2rem;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.navbar .logo {
+  display: flex;
+  align-items: center;
+}
+
+.navbar .logo img {
+  height: 32px;
+  margin-right: 8px;
+}
+
+.navbar .logo h1 {
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+.navbar nav ul {
+  list-style: none;
+  display: flex;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+}
+
+.navbar nav ul li a {
+  text-decoration: none;
+  color: var(--text-color);
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.navbar nav ul li a:hover {
+  color: var(--primary-color);
+}
+
+.container {
+  width: 90%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 0;
+}
+
+.files-section {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.files-section h1 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.file-actions {
+  margin-top: 1rem;
+}
+
+.file-actions button {
+  background-color: var(--primary-color);
+  color: #fff;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  margin: 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: opacity 0.3s ease;
+}
+
+.file-actions button:hover {
+  opacity: 0.9;
+}
+
+.hero-section {
+  text-align: center;
+  padding: 3rem 2rem;
+  background-color: #f8f9fc;
+  border-top: 1px solid #e2e2e2;
+}
+
+.hero-section h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.hero-section p {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.hero-section button {
+  background-color: var(--primary-color);
+  color: #fff;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1.1rem;
+  transition: opacity 0.3s ease;
+}
+
+.hero-section button:hover {
+  opacity: 0.9;
+}
+
+.footer {
+  text-align: center;
+  padding: 1rem;
+  font-size: 0.9rem;
+  background-color: #fff;
+  border-top: 1px solid #e2e2e2;
+}
+
+.btn {
+  background-color: var(--primary-color);
+  color: #fff;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn:hover {
+  opacity: 0.9;
+}
+
+.login-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  width: 100%;
+}
+
+.login-container .logo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.login-container .logo img {
+  width: 50px;
+}
+
+.login-container .logo h1 {
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+.login-container h2 {
+  font-size: 1.2rem;
+  margin: 1rem 0;
+}
+
+.login-container form {
+  display: flex;
+  flex-direction: column;
+  width: 300px;
+  gap: 1rem;
+}
+
+.login-container form input {
+  padding: 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.login-container form button {
+  background-color: var(--primary-color);
+  color: #fff;
+  border: none;
+  padding: 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: opacity 0.3s ease;
+}
+
+.login-container form button:hover {
+  opacity: 0.9;
+}
+
+.sign-up-text {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+
+.flash-messages ul {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0;
+}
+
+.flash-messages li.success {
+  background-color: #d4edda;
+  border: 1px solid #c3e6cb;
+  color: #155724;
+  padding: 0.75rem;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+}
+
+.flash-messages li.error {
+  background-color: #ffe7e7;
+  border: 1px solid #ffa3a3;
+  color: #d8000c;
+  padding: 0.75rem;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+}

@@ -28,18 +28,22 @@
           {% for friend in friends %}
             <div class="friend-card">
               <div class="friend-info">
-                <h3 class="friend-name">{{ friend.display_name or friend.username }}</h3>
-                <p class="friend-username">@{{ friend.username }}</p>
-                <p class="friend-details">
-                  Joined: {{ friend.created_at.strftime('%b %d, %Y') }}
-                </p>
+                <h3>{{ friend.display_name or friend.username }}</h3>
+                <p>@{{ friend.username }}</p>
+                <p>Joined: {{ friend.created_at.strftime('%b %d, %Y') }}</p>
               </div>
               <div class="friend-actions">
                 <a href="{{ url_for('friends.view_friend_files', username=friend.username) }}"
                    class="btn btn-download">View Files</a>
                 <form action="{{ url_for('friends.remove', username=friend.username) }}"
-                      method="post" style="display:inline; margin-left: 0.5rem;">
-                  <button type="submit" class="btn btn-remove" onclick="return confirm('Remove friend?')">Remove</button>
+                      method="post"
+                      style="display:inline; margin-left:0.5rem;">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit"
+                          class="btn btn-remove"
+                          onclick="return confirm('Remove friend?')">
+                    Remove
+                  </button>
                 </form>
               </div>
             </div>

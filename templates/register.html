@@ -4,18 +4,18 @@
   <meta charset="UTF-8">
   <title>SyncSphere - Register</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Google Fonts and Styles -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
 </head>
 <body>
   <div class="login-container">
     <div class="logo">
-      <img src="{{ url_for('static', filename='images/logo.png') }}" alt="SyncSphere Logo" />
+      <img src="{{ url_for('static', filename='images/logo.png') }}" alt="SyncSphere Logo">
       <h1>SyncSphere</h1>
     </div>
     <h2>Create your account</h2>
     <form action="{{ url_for('auth.register') }}" method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="text" name="username" placeholder="Choose a username" required>
       <input type="email" name="email" placeholder="Your email address" required>
       <input type="password" name="password" placeholder="Create a password" required>
@@ -24,13 +24,15 @@
     <p class="sign-up-text">
       Already have an account? <a href="{{ url_for('auth.login') }}">Log In</a>
     </p>
-    {% with messages = get_flashed_messages() %}
+    {% with messages = get_flashed_messages(with_categories=True) %}
       {% if messages %}
-        <ul>
-          {% for message in messages %}
-            <li>{{ message }}</li>
-          {% endfor %}
-        </ul>
+        <div class="flash-messages">
+          <ul>
+            {% for category, message in messages %}
+              <li class="{{ category }}">{{ message }}</li>
+            {% endfor %}
+          </ul>
+        </div>
       {% endif %}
     {% endwith %}
   </div>

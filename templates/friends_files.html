@@ -13,7 +13,7 @@
       <span class="app-name">SyncSphere</span>
     </div>
     <nav class="navbar-right">
-      <a href="{{ url_for('dashboard') }}">dashboard</a>
+      <a href="{{ url_for('dashboard') }}">Dashboard</a>
       <a href="{{ url_for('friends.list_friends') }}">Friends</a>
       <a href="{{ url_for('auth.logout') }}">Logout</a>
     </nav>
@@ -34,15 +34,12 @@
           </thead>
           <tbody>
             {% for file in files %}
-            <tr>
-              <td>{{ file.original_filename }}</td>
-              <td>{{ file.upload_date.strftime("%Y-%m-%d %H:%M") }}</td>
-              <td>{{ file.file_size }}</td>
-              <td>
-                <a href="{{ url_for('files.download', file_id=file.id) }}"
-                   class="btn btn-download">Download</a>
-              </td>
-            </tr>
+              <tr>
+                <td>{{ file.original_filename }}</td>
+                <td>{{ file.upload_date.strftime("%Y-%m-%d %H:%M") }}</td>
+                <td>{{ file.file_size }}</td>
+                <td><a href="{{ url_for('files.download', file_id=file.id) }}" class="btn btn-download">Download</a></td>
+              </tr>
             {% endfor %}
           </tbody>
         </table>
