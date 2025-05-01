@@ -5,22 +5,16 @@ import threading
 import json
 import time
 import ssl
-<<<<<<< HEAD
 import os
-=======
->>>>>>> 1cfbec7895d0d83ec624bbe3a4d53536d801333d
 
 from config import BIND_HOST, GRAND_PORT
 
 # How often (in seconds) to prompt regionals for changes
 SYNC_INTERVAL = 60
-<<<<<<< HEAD
 
 # History buffer: store last N event batches for reconnects
 HISTORY_SIZE = 60
 history = []
-=======
->>>>>>> 1cfbec7895d0d83ec624bbe3a4d53536d801333d
 
 # Global list of connected regional sockets
 clients = []
@@ -38,10 +32,6 @@ def send_history(conn):
         except Exception as e:
             print(f"[GrandServer] Failed to replay history to {conn.getpeername()}: {e}", flush=True)
 
-<<<<<<< HEAD
-
-=======
->>>>>>> 1cfbec7895d0d83ec624bbe3a4d53536d801333d
 def accept_loop(server_sock, context):
     """Continuously accept new regional connections and wrap them with TLS."""
     while True:
@@ -136,7 +126,6 @@ def sync_loop():
 
 
 def broadcast(events, exclude=None):
-<<<<<<< HEAD
     """Broadcast received events to every regional except the sender and record history."""
     # Record in history buffer
     print(events)
@@ -144,9 +133,6 @@ def broadcast(events, exclude=None):
     if len(history) > HISTORY_SIZE:
         history.pop(0)
 
-=======
-    """Broadcast received events to every regional except the sender."""
->>>>>>> 1cfbec7895d0d83ec624bbe3a4d53536d801333d
     packet = json.dumps({'type': 'receive', 'events': events}) + '\n'
     data = packet.encode('utf-8')
 
@@ -180,13 +166,8 @@ def main():
 
     # Create a TLS context and load your self-signed cert + key
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-<<<<<<< HEAD
     context.load_cert_chain(certfile=certfile,
                              keyfile=keyfile)
-=======
-    context.load_cert_chain(certfile="server.crt",
-                             keyfile="server.key")
->>>>>>> 1cfbec7895d0d83ec624bbe3a4d53536d801333d
 
     # Start accepting connections (wrapped in TLS)
     threading.Thread(target=accept_loop, args=(server_sock, context), daemon=True).start()
