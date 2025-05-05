@@ -1,5 +1,3 @@
-# regional_servers/sync.py
-
 import os
 import socket
 import json
@@ -54,13 +52,13 @@ def receive_changes(message):
         from friend_management import FriendManager
         from models import db, User, File
 
-        fm = FileManager(upload_folder=UPLOAD_FOLDER)
-        fr = FriendManager()
+        file_manager = FileManager(upload_folder=UPLOAD_FOLDER)
+        friend_manager = FriendManager()
 
         for ev in message.get('events', []):
-            et = ev.get('type')
+            event_type = ev.get('type')
             try:
-                if et == 'file_upload':
+                if event_type == 'file_upload':
                     # Decode and write file bytes
                     payload = ev['payload']
                     data = base64.b64decode(payload['content'])
@@ -82,59 +80,59 @@ def receive_changes(message):
                     db.session.merge(rec)
                     db.session.commit()
 
-                elif et == 'file_delete':
-                    rec = fm.get_file_record(ev['file_id'])
+                elif event_type == 'file_delete':
+                    rec = file_manager.get_file_record(ev['file_id'])
                     if not rec:
                         print(f"[Sync] Warn: no file record for deletion ID {ev['file_id']}", flush=True)
                         continue
                     user = User.query.get(rec.user_id)
-                    fm.delete_file(rec, user)
+                    file_manager.delete_file(rec, user)
 
-                elif et == 'permission_change':
-                    rec = fm.get_file_record(ev['file_id'])
+                elif event_type == 'permission_change':
+                    rec = file_manager.get_file_record(ev['file_id'])
                     if not rec:
                         print(f"[Sync] Warn: no file for permission change ID {ev['file_id']}", flush=True)
                         continue
                     user = User.query.get(rec.user_id)
-                    fm.update_permissions(rec, ev['new_permissions'], user)
+                    file_manager.update_permissions(rec, ev['new_permissions'], user)
 
-                elif et == 'user_create':
+                elif event_type == 'user_create':
                     # Merge new user record, preserves existing if present
                     u = User(
                         id=ev['user_id'],
                         username=ev['username'],
                         email=ev['email'],
-                        password_hash=ev.get('password_hash')  # may be None
+                        password_hash=ev.get('password_hash')
                     )
                     db.session.merge(u)
                     db.session.commit()
 
-                elif et == 'friend_request':
-                    fr.send_request(
+                elif event_type == 'friend_request':
+                    friend_manager.send_request(
                         User.query.get(ev['from_user']),
                         User.query.get(ev['to_user'])
                     )
 
-                elif et == 'friend_added':
-                    fr.respond_request(ev['request_id'], accept=True)
+                elif event_type == 'friend_added':
+                    friend_manager.respond_request(ev['request_id'], accept=True)
 
-                elif et == 'friend_rejected':
-                    fr.respond_request(ev['request_id'], accept=False)
+                elif event_type == 'friend_rejected':
+                    friend_manager.respond_request(ev['request_id'], accept=False)
 
-                elif et == 'friend_removed':
-                    fr.remove_friend(
+                elif event_type == 'friend_removed':
+                    friend_manager.remove_friend(
                         User.query.get(ev['user_id']),
                         User.query.get(ev['friend_id'])
                     )
 
                 else:
                     # Unknown event type — log for debugging
-                    print(f"[Sync] Unknown event type: {et}", flush=True)
+                    print(f"[Sync] Unknown event type: {event_type}", flush=True)
 
             except Exception as e:
                 # Roll back any partial DB changes on error
                 db.session.rollback()
-                print(f"[Sync] Error applying '{et}' event: {e}", flush=True)
+                print(f"[Sync] Error applying '{event_type}' event: {e}", flush=True)
 
 
 def sync_changes(sock):
@@ -142,15 +140,15 @@ def sync_changes(sock):
     buffer = sock.makefile('r')  # wrap socket in file-like object for line reads
     for line in buffer:
         try:
-            msg = json.loads(line)
+            received_message = json.loads(line)
         except json.JSONDecodeError:
             continue
 
-        mtype = msg.get('type')
-        if mtype == 'send':
+        message_type = received_message.get('type')
+        if message_type == 'send':
             send_changes(sock)
-        elif mtype == 'receive':
-            receive_changes(msg)
+        elif message_type == 'receive':
+            receive_changes(received_message)
 
         time.sleep(0)  # yield to other threads
 

@@ -17,3 +17,5 @@ db_file = os.path.join(basedir, 'database.db')
 UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads')
 
 changes_queue = Queue()
+
+ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}

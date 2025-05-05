@@ -5,9 +5,7 @@ from werkzeug.utils import secure_filename
 from models import db, File
 from config import changes_queue
 from datetime import datetime
-
-# Allowed file extensions for uploads
-ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
+from config import ALLOWED_EXTENSIONS
 
 class FileManager:
     #Encapsulates file operations.

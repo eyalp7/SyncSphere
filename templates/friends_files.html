@@ -9,8 +9,11 @@
 <body>
   <header class="navbar">
     <div class="navbar-left">
-      <img src="{{ url_for('static', filename='images/logo.png') }}" class="logo" alt="SyncSphere Logo">
-      <span class="app-name">SyncSphere</span>
+      <a href="{{ url_for('dashboard') }}" class="logo-link" style="display:flex; align-items:center; text-decoration:none;">
+        <img src="{{ url_for('static', filename='images/logo.png') }}"
+             alt="SyncSphere Logo" class="logo">
+        <span class="app-name">SyncSphere</span>
+      </a>
     </div>
     <nav class="navbar-right">
       <a href="{{ url_for('dashboard') }}">Dashboard</a>
