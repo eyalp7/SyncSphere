@@ -9,24 +9,35 @@ import ssl
 from config import BIND_HOST, GRAND_PORT, certfile, keyfile
 
 # How often (in seconds) to prompt regionals for changes
-SYNC_INTERVAL = 60 #Every 5 minutes
+SYNC_INTERVAL = 30  # 1 sync every 30 seconds
 
-# History buffer: store last 5 event batches for reconnects
-HISTORY_SIZE = 5
+# We want to keep all batches from the last 5 sync intervals (5×SYNC_INTERVAL seconds)
+HISTORY_WINDOW = SYNC_INTERVAL * 5
+
+# history holds dicts {"ts": timestamp, "events": […]}
 history = []
 
 # Global list of connected regional sockets
 clients = []
-clients_lock = threading.Lock() #Makes sure that only 1 thread at a time can access the clients.
+clients_lock = threading.Lock()  # ensure one thread at a time touches clients list
+
 
 def send_history(conn):
-    """Sends the last 5 events to a regional_server."""
-    for events in history:
-        packet = json.dumps({'type': 'receive', 'events': events}) + '\n'
+    """
+    Replay every batch of events from the last HISTORY_WINDOW seconds
+    to this newly connected regional_server.
+    """
+    cutoff = time.time() - HISTORY_WINDOW
+    # send each batch whose timestamp is within the window
+    for entry in history:
+        if entry["ts"] < cutoff:
+            continue
+        packet = json.dumps({'type': 'receive', 'events': entry["events"]}) + '\n'
         try:
             conn.sendall(packet.encode('utf-8'))
         except Exception as e:
             print(f"[GrandServer] Failed to replay history to {conn.getpeername()}: {e}", flush=True)
+
 
 def accept_loop(server_sock, context):
     """Continuously accept new regional connections and wrap them with TLS."""
@@ -35,19 +46,22 @@ def accept_loop(server_sock, context):
             raw_conn, addr = server_sock.accept()
             # Perform TLS handshake on the new connection
             try:
-                conn = context.wrap_socket(raw_conn, server_side=True) #Wraps the socket with TLS.
+                conn = context.wrap_socket(raw_conn, server_side=True)
                 print(f"[GrandServer] Regional connected (TLS): {addr}", flush=True)
-
             except ssl.SSLError as e:
                 print(f"[GrandServer] SSL handshake failed with {addr}: {e}", flush=True)
                 raw_conn.close()
                 continue
 
+            # add to clients under lock
             with clients_lock:
                 clients.append(conn)
-            # Replay missed events for reconnects
+
+            # replay missed-history batches
             send_history(conn)
-            threading.Thread(target=client_handler, args=(conn,), daemon=True).start() #starts a thread new thread for the accepted regional.
+
+            # start handler thread
+            threading.Thread(target=client_handler, args=(conn,), daemon=True).start()
 
         except Exception as e:
             print(f"[GrandServer] accept_loop error: {e}", flush=True)
@@ -56,12 +70,11 @@ def accept_loop(server_sock, context):
 
 def client_handler(conn):
     """Read incoming 'changes' messages and rebroadcast them."""
-    addr = conn.getpeername() #Gets the regional's address.
-    f = conn.makefile('r') #Wraps the socket into a file-like object(this makes receiving large chunks much easier).
+    addr = conn.getpeername()
+    f = conn.makefile('r')  # treat socket as file for line-based reading
     try:
         for line in f:
-            #Continiously reads each incoming line.
-            line = line.strip() #Ignoring empty lines.
+            line = line.strip()
             if not line:
                 continue
 
@@ -71,18 +84,18 @@ def client_handler(conn):
                 print(f"[GrandServer] Invalid JSON from {addr}: {e}", flush=True)
                 continue
 
-            mtype = msg.get('type') #Getting the message type
+            mtype = msg.get('type')
             if mtype == 'changes':
-                events = msg.get('events', []) #Returns an empty list incase events is missing.
+                events = msg.get('events', [])
                 print(f"[GrandServer] Received {len(events)} events from {addr}", flush=True)
-                broadcast(events, 
-                exclude=conn) #Sends the changes to the rest of the regionals.
+                broadcast(events, exclude=conn)
             else:
                 print(f"[GrandServer] Unknown message type from {addr}: {mtype}", flush=True)
 
     except Exception as e:
         print(f"[GrandServer] Connection error from {addr}: {e}", flush=True)
     finally:
+        # remove disconnected client
         with clients_lock:
             if conn in clients:
                 clients.remove(conn)
@@ -97,7 +110,7 @@ def sync_loop():
     """Every SYNC_INTERVAL seconds, send 'send' to all live regionals."""
     while True:
         try:
-            time.sleep(SYNC_INTERVAL) #Sleeps until the next sync process.
+            time.sleep(SYNC_INTERVAL)
             print("[GrandServer] Requesting changes from all regionals...", flush=True)
             packet = json.dumps({'type': 'send'}) + '\n'
             data = packet.encode('utf-8')
@@ -125,12 +138,18 @@ def sync_loop():
 
 
 def broadcast(events, exclude=None):
-    """Broadcast received events to every regional except the sender and record history."""
-    # Record in history buffer
-    print(events)
-    history.append(events)
-    if len(history) > HISTORY_SIZE:
-        history.pop(0)
+    """
+    Broadcast received events to every regional except the sender,
+    and record each batch with a timestamp for history-window replay.
+    """
+    # record this batch with the current time
+    history.append({
+        "ts": time.time(),
+        "events": events
+    })
+    # purge any entries older than HISTORY_WINDOW
+    cutoff = time.time() - HISTORY_WINDOW
+    history[:] = [h for h in history if h["ts"] >= cutoff]
 
     packet = json.dumps({'type': 'receive', 'events': events}) + '\n'
     data = packet.encode('utf-8')
@@ -151,30 +170,29 @@ def broadcast(events, exclude=None):
                 clients.remove(conn)
                 try:
                     conn.close()
-                except: #In case that the socket is already closed.
+                except:
                     pass
 
 
 def main():
     # Create TCP listening socket
     server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    # allow quick reuse after restart
     server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server_sock.bind((BIND_HOST, GRAND_PORT))
     server_sock.listen()
     print(f"[GrandServer] Listening on {BIND_HOST}:{GRAND_PORT}", flush=True)
 
-    # Create a TLS context and load your self-signed cert + key
+    # Create TLS context and load certificate/key
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-    context.load_cert_chain(certfile=certfile,
-                             keyfile=keyfile)
+    context.load_cert_chain(certfile=certfile, keyfile=keyfile)
 
-    # Start accepting connections (wrapped in TLS)
+    # start accept and sync loops in background threads
     threading.Thread(target=accept_loop, args=(server_sock, context), daemon=True).start()
-    # Start the periodic sync loop
     threading.Thread(target=sync_loop, daemon=True).start()
 
     try:
-        # Keep the main thread alive
+        # keep main thread alive
         while True:
             time.sleep(1)
     except KeyboardInterrupt:

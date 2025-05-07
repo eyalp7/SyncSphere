@@ -4,7 +4,7 @@ from friend_management import FriendManager
 from file_management import FileManager
 
 # Blueprint for friend-related routes under /friends
-friends_bp     = Blueprint('friends', __name__)
+friends_bp = Blueprint('friends', __name__)
 # Manager instances for business logic
 friend_manager = FriendManager()
 file_manager   = FileManager(upload_folder='uploads')
@@ -57,7 +57,7 @@ def view_requests():
 @friends_bp.route('/requests/respond/<int:rq_id>', methods=['POST'])
 def respond_request(rq_id):
     """ Handle acceptance or rejection of a friend request. """
-    user   = get_current_user()
+    user = get_current_user()
     action = request.form.get('action')
     try:
         friend_manager.respond_request(rq_id, accept=(action == 'accept'))
@@ -109,6 +109,11 @@ def view_friend_files(username):
     if not friend:
         flash("User not found.", "error")
         return redirect(url_for('friends.list_friends'))
+
+    friends_list = friend_manager.get_friends(user)
+    if friend not in friends_list:
+        flash("You may only view files of your friends.", "error")
+        return redirect(url_for('dashboard'))
 
     all_files     = file_manager.list_user_files(friend)
     # Filter out files the current user isn't allowed to see

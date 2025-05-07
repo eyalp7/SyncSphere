@@ -22,13 +22,13 @@ def send_changes(sock):
 
         # If it's a new file upload, Base64-encode raw bytes for JSON transport
         if change['type'] == 'file_upload':
-            p = change['payload'].copy()
-            raw = p.pop('content')  # remove binary data from payload
+            payload_copy = change['payload'].copy()
+            raw = payload_copy.pop('content')  # remove binary data from payload
             # encode bytes to UTF-8 string so it can be embedded in JSON
-            p['content'] = base64.b64encode(raw).decode('utf-8')
+            payload_copy['content'] = base64.b64encode(raw).decode('utf-8')
             events.append({
                 'type': change['type'],
-                'payload': p,
+                'payload': payload_copy,
                 'timestamp': change['timestamp']
             })
         else:
@@ -55,12 +55,12 @@ def receive_changes(message):
         file_manager = FileManager(upload_folder=UPLOAD_FOLDER)
         friend_manager = FriendManager()
 
-        for ev in message.get('events', []):
-            event_type = ev.get('type')
+        for sync_event in message.get('events', []):
+            event_type = sync_event.get('type')
             try:
                 if event_type == 'file_upload':
                     # Decode and write file bytes
-                    payload = ev['payload']
+                    payload = sync_event['payload']
                     data = base64.b64decode(payload['content'])
                     dest = os.path.join(UPLOAD_FOLDER, payload['stored_filename'])
                     os.makedirs(os.path.dirname(dest), exist_ok=True)
@@ -81,48 +81,50 @@ def receive_changes(message):
                     db.session.commit()
 
                 elif event_type == 'file_delete':
-                    rec = file_manager.get_file_record(ev['file_id'])
+                    rec = file_manager.get_file_record(sync_event['file_id'])
                     if not rec:
-                        print(f"[Sync] Warn: no file record for deletion ID {ev['file_id']}", flush=True)
+                        print(f"[Sync] Warn: no file record for deletion ID {sync_event['file_id']}", flush=True)
                         continue
                     user = User.query.get(rec.user_id)
-                    file_manager.delete_file(rec, user)
+                    file_manager.delete_file(rec, user, enqueue=False)
 
                 elif event_type == 'permission_change':
-                    rec = file_manager.get_file_record(ev['file_id'])
+                    rec = file_manager.get_file_record(sync_event['file_id'])
                     if not rec:
-                        print(f"[Sync] Warn: no file for permission change ID {ev['file_id']}", flush=True)
+                        print(f"[Sync] Warn: no file for permission change ID {sync_event['file_id']}", flush=True)
                         continue
                     user = User.query.get(rec.user_id)
-                    file_manager.update_permissions(rec, ev['new_permissions'], user)
+                    file_manager.update_permissions(rec, sync_event['new_permissions'], user, enqueue=False)
 
                 elif event_type == 'user_create':
                     # Merge new user record, preserves existing if present
                     u = User(
-                        id=ev['user_id'],
-                        username=ev['username'],
-                        email=ev['email'],
-                        password_hash=ev.get('password_hash')
+                        id=sync_event['user_id'],
+                        username=sync_event['username'],
+                        email=sync_event['email']
                     )
+                    u.set_password(sync_event['password'])
                     db.session.merge(u)
                     db.session.commit()
 
                 elif event_type == 'friend_request':
                     friend_manager.send_request(
-                        User.query.get(ev['from_user']),
-                        User.query.get(ev['to_user'])
+                        User.query.get(sync_event['from_user']),
+                        User.query.get(sync_event['to_user']),
+                        enqueue=False
                     )
 
                 elif event_type == 'friend_added':
-                    friend_manager.respond_request(ev['request_id'], accept=True)
+                    friend_manager.respond_request(sync_event['request_id'], accept=True, enqueue=False)
 
                 elif event_type == 'friend_rejected':
-                    friend_manager.respond_request(ev['request_id'], accept=False)
+                    friend_manager.respond_request(sync_event['request_id'], accept=False, enqueue=False)
 
                 elif event_type == 'friend_removed':
                     friend_manager.remove_friend(
-                        User.query.get(ev['user_id']),
-                        User.query.get(ev['friend_id'])
+                        User.query.get(sync_event['user_id']),
+                        User.query.get(sync_event['friend_id']),
+                        enqueue=False
                     )
 
                 else:

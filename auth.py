@@ -15,7 +15,7 @@ LOCKOUT_TIME_MINUTES = 15
 def _is_locked_out():
     """ Check if the current session is under lockout. Returns True if lockout hasn’t expired; otherwise clears lockout state."""
     lockout_until = session.get('lockout_until')
-    if lockout_until and datetime.fromisoformat(lockout_until) > datetime.utcnow():
+    if lockout_until and datetime.fromisoformat(lockout_until) > datetime.nownow():
         return True
     # Lockout expired or not set → remove any stale counters
     session.pop('lockout_until', None)
@@ -54,10 +54,11 @@ def register():
         # Notify other regional servers of the new user
         changes_queue.put({
             "type":      "user_create",
-            "user_id":   new_user.id,
+            "user_id":    new_user.id,
             "username":  new_user.username,
             "email":     new_user.email,
-            "timestamp": datetime.utcnow().isoformat()
+            "password": password,
+            "timestamp": datetime.now().isoformat()
         })
 
         flash('Registration successful! Please log in.', 'success')
@@ -104,7 +105,7 @@ def login():
 
         # If too many fails, impose lockout window
         if attempts >= MAX_LOGIN_ATTEMPTS:
-            until = datetime.utcnow() + timedelta(minutes=LOCKOUT_TIME_MINUTES)
+            until = datetime.now() + timedelta(minutes=LOCKOUT_TIME_MINUTES)
             session['lockout_until'] = until.isoformat()
             flash(f'Too many failed attempts. Try again in {LOCKOUT_TIME_MINUTES} minutes.', 'error')
         else:

@@ -5,7 +5,7 @@ from datetime import datetime
 class FriendManager:
     #Encapsulates friend request and friendship operations, including sending requests, responding, listing, and removal.
 
-    def send_request(self, from_user, to_user):
+    def send_request(self, from_user, to_user, enqueue=True):
         """ Send a friend request from 'from_user' to 'to_user'. """
         # Prevent sending a request to oneself
         if from_user.id == to_user.id:
@@ -48,13 +48,14 @@ class FriendManager:
         db.session.commit()
 
         # Enqueue change for synchronization with other nodes
-        changes_queue.put({
-            "type":       "friend_request",
-            "request_id": fr.id,
-            "from_user":  fr.from_user_id,
-            "to_user":    fr.to_user_id,
-            "timestamp":  datetime.now().isoformat()
-        })
+        if enqueue:
+            changes_queue.put({
+                "type":       "friend_request",
+                "request_id": fr.id,
+                "from_user":  fr.from_user_id,
+                "to_user":    fr.to_user_id,
+                "timestamp":  datetime.now().isoformat()
+            })
         return fr
 
     def get_incoming_requests(self, user):
@@ -71,7 +72,7 @@ class FriendManager:
             status='pending'
         ).all()
 
-    def respond_request(self, request_id, accept=True):
+    def respond_request(self, request_id, accept=True, enqueue=True):
         """ Accept or reject a friend request by ID. If accepted, creates reciprocal Friendship entries. """
         # Fetch the request object
         fr = FriendRequest.query.get(request_id)
@@ -86,22 +87,22 @@ class FriendManager:
         db.session.commit()
 
         # Enqueue corresponding sync event
-        if accept:
-            changes_queue.put({
-                "type":      "friend_added",
-                "user_id":   fr.from_user_id,
-                "friend_id": fr.to_user_id,
-                "timestamp": datetime.now().isoformat()
-            })
-        else:
-            changes_queue.put({
-                "type":       "friend_rejected",
-                "request_id": fr.id,
-                "from_user":  fr.from_user_id,
-                "to_user":    fr.to_user_id,
-                "timestamp":  datetime.now().isoformat()
-            })
-        return fr
+        if enqueue:
+            if accept:
+                changes_queue.put({
+                    "type":      "friend_added",
+                    "request_id": fr.id,
+                    "timestamp": datetime.now().isoformat()
+                })
+            else:
+                changes_queue.put({
+                    "type":       "friend_rejected",
+                    "request_id": fr.id,
+                    "from_user":  fr.from_user_id,
+                    "to_user":    fr.to_user_id,
+                    "timestamp":  datetime.now().isoformat()
+                })
+            return fr
 
     def get_friends(self, user):
         """ List all users who are friends with 'user'. """
@@ -109,7 +110,7 @@ class FriendManager:
         fs = Friendship.query.filter_by(user_id=user.id).all()
         return [User.query.get(f.friend_id) for f in fs]
 
-    def remove_friend(self, user, to_user):
+    def remove_friend(self, user, to_user, enqueue=True):
         """ Remove an existing friendship between 'user' and 'to_user'. """
         # Find both directions of the friendship
         f1 = Friendship.query.filter_by(user_id=user.id,    friend_id=to_user.id).first()
@@ -124,10 +125,11 @@ class FriendManager:
         db.session.commit()
 
         # Enqueue removal event
-        changes_queue.put({
-            "type":      "friend_removed",
-            "user_id":   user.id,
-            "friend_id": to_user.id,
-            "timestamp": datetime.now().isoformat()
-        })
+        if enqueue:
+            changes_queue.put({
+                "type":      "friend_removed",
+                "user_id":   user.id,
+                "friend_id": to_user.id,
+                "timestamp": datetime.now().isoformat()
+            })
         return True

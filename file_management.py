@@ -94,7 +94,7 @@ class FileManager:
         """
         return File.query.get(file_id)
 
-    def delete_file(self, file_record, user):
+    def delete_file(self, file_record, user, enqueue=True):
         """ Delete a file from disk and remove its DB record. Only the file owner may delete. Enqueues a file_delete sync event. """
         if file_record.user_id != user.id:
             # Prevent unauthorized deletions
@@ -108,14 +108,15 @@ class FileManager:
         db.session.commit()
 
         # Notify other servers of deletion
-        changes_queue.put({
-            "type":    "file_delete",
-            "file_id": file_record.id,
-            "timestamp": datetime.now().isoformat()
-        })
+        if enqueue:
+            changes_queue.put({
+                "type":    "file_delete",
+                "file_id": file_record.id,
+                "timestamp": datetime.now().isoformat()
+            })
         return True
 
-    def update_permissions(self, file_record, new_permissions, user):
+    def update_permissions(self, file_record, new_permissions, user, enqueue=True):
         """ Change the permission of a file (private or public) Only the owner may change permissions. Enqueues a permission_change sync event. """
         if file_record.user_id != user.id:
             # Prevent unauthorized permission changes
@@ -124,12 +125,13 @@ class FileManager:
         db.session.commit()
 
         # Notify other servers of permission change
-        changes_queue.put({
-            "type":            "permission_change",
-            "file_id":         file_record.id,
-            "new_permissions": file_record.permissions,
-            "timestamp":       datetime.now().isoformat()
-        })
+        if enqueue:
+            changes_queue.put({
+                "type":            "permission_change",
+                "file_id":         file_record.id,
+                "new_permissions": file_record.permissions,
+                "timestamp":       datetime.now().isoformat()
+            })
         return file_record
 
     def is_access_allowed(self, file_record, user):

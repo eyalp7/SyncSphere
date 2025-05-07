@@ -2,7 +2,7 @@ import os
 from queue import Queue
 
 # Hostname or IP of the Grand Server
-GRAND_HOST = "10.0.0.3"
+GRAND_HOST = "100.100.100.100" #Change the ip.
 GRAND_PORT = 9000
 
 BIND_HOST = "0.0.0.0"
