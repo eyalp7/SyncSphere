@@ -87,5 +87,5 @@ SyncSphere is a distributed file backup and sharing system designed as a final p
 
 
 **Download the full project breakdown PDF here:**
-[📄 project_breakdown.pdf](project_breakdown.pdf)
+[📄 project_breakdown.pdf](SyncSphere.pdf)
 
